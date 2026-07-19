@@ -1,0 +1,39 @@
+// タイマーの現在モード
+export type TimerMode = "focus" | "break";
+
+// タイマー本体の状態
+export interface TimerState {
+  mode: TimerMode;
+  remainingSeconds: number;
+  isRunning: boolean;
+  // 現在のモードの合計秒数（残り時間の割合表示に使う）
+  totalSeconds: number;
+}
+
+// ユーザーが設定できるタイマーの長さ（分単位）
+export interface TimerSettings {
+  focusMinutes: number;
+  breakMinutes: number;
+  // true: 集中セッション終了後、自動で休憩に入る
+  autoStartBreak: boolean;
+}
+
+// 完了したセッション1件分の記録
+export interface SessionRecord {
+  id: string;
+  mode: TimerMode;
+  startedAt: number; // epoch ms
+  endedAt: number; // epoch ms
+  durationSeconds: number;
+  completed: boolean; // 最後まで完了したか、途中スキップ/中断したか
+}
+
+export const DEFAULT_SETTINGS: TimerSettings = {
+  focusMinutes: 25,
+  breakMinutes: 5,
+  autoStartBreak: false,
+};
+
+// プリセットの時間候補（分）
+export const FOCUS_PRESETS = [15, 25, 45, 60];
+export const BREAK_PRESETS = [5, 10, 15];
