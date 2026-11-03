@@ -1,77 +1,92 @@
-# Pomodoro App — セットアップ手順
+# ポモドーロタイマー
 
-このzipには、機能要件で決めたMVP(タイマー機能のみ、タイムラインはv1.1で追加予定)のソースコード一式が入っています。
-ネットワークにアクセスできる自分のPC上で、以下の手順でセットアップしてください。
+シンプルな集中・休憩タイマーのiOSアプリです。タイマーとセッション履歴は端末内に保存します。
 
-## 1. 前提
+[App Storeで見る](https://apps.apple.com/us/app/%E3%83%9D%E3%83%A2%E3%83%89%E3%83%BC%E3%83%AD%E3%82%BF%E3%82%A4%E3%83%9E%E3%83%BC-%E3%82%B7%E3%83%B3%E3%83%97%E3%83%AB%E3%81%AA%E9%9B%86%E4%B8%AD%E3%82%BF%E3%82%A4%E3%83%9E%E3%83%BC/id6792636926)
 
-- Node.js (LTS版、18以上推奨)
-- npm
-- スマホに「Expo Go」アプリをインストールしておくと、実機で即確認できます
+## 主な機能
 
-## 2. セットアップ手順
+- 集中・休憩タイマーと時間プリセット
+- 開始、一時停止、リセット、スキップ
+- アプリがバックグラウンドに移動しても、復帰時に残り時間を再計算
+- タイマー終了通知
+- セッション履歴の端末内保存と今日の実績表示
+- 集中後に休憩を自動開始する設定
 
-```bash
-# 1. このzipを展開したフォルダに移動
-cd pomodoro-app
+## 技術構成
 
-# 2. 依存パッケージをインストール
-npm install
+- Expo SDK 54 / React Native 0.81 / TypeScript
+- React Navigation
+- AsyncStorageによる端末内保存
+- Expo Notificationsによる通知
+- EAS Build / EAS Submit
 
-# 3. 開発サーバーを起動
+## 開発環境のセットアップ
+
+Node.jsとnpmを用意し、リポジトリのルートで実行します。
+
+```sh
+npm ci
 npx expo start
 ```
 
-ターミナルにQRコードが表示されるので、スマホの「Expo Go」アプリでスキャンすると実機で動作確認できます。
-（iOSはカメラアプリで読み取り→Expo Goで開く、Androidは Expo Go アプリ内のスキャナーを使用）
+Expo Goまたは開発ビルドで実機確認できます。通知の挙動は端末・OS・ビルド方法によって異なるため、リリース前に実機で確認してください。
 
-## 3. フォルダ構成
+## iOSのビルドとApp Store提出
+
+このリポジトリにはEASの `development`、`preview`、`production` プロファイルが設定されています。App Store向けのビルドにはEASアカウントと、Apple Developer / App Store Connectでアプリを管理できる権限が必要です。
+
+1. 依存関係をインストールし、EASにログインします。
+
+   ```sh
+   npm ci
+   npx eas-cli@latest login
+   ```
+
+2. `app.json` のアプリ名、バンドルID、EAS project IDが既存アプリの設定と一致していることを確認します。公開済みアプリのバンドルID `com.Kazumax71.pomodoro` は変更しないでください。アプリのバージョンを更新するときは `app.json` の `expo.version` を更新します。ビルド番号は `eas.json` の設定によりEAS側で自動採番されます。
+
+3. iOS本番ビルドを作成します。
+
+   ```sh
+   npx eas-cli@latest build --platform ios --profile production
+   ```
+
+4. 完了したビルドをApp Store Connectへアップロードします。
+
+   ```sh
+   npx eas-cli@latest submit --platform ios --profile production --latest
+   ```
+
+5. App Store Connectでビルドの処理完了を確認し、必要なバージョン情報・審査情報を入力して審査へ提出します。審査通過後の公開タイミングもApp Store Connectで設定します。
+
+EASが初回ビルド・提出時に認証情報や署名資格情報の設定を求めることがあります。秘密鍵、APIキー、パスワードはリポジトリへ追加しないでください。
+
+## プロジェクト構成
 
 ```
-pomodoro-app/
-├── App.tsx                 # エントリーポイント、タブナビゲーション
-├── app.json                # Expo設定(通知権限など)
-├── package.json
-├── tsconfig.json
-└── src/
-    ├── types/index.ts      # 型定義、デフォルト設定値
-    ├── theme.ts             # カラーパレット
-    ├── hooks/
-    │   └── useTimer.ts      # タイマーの中核ロジック(ウォールクロック基準)
-    ├── lib/
-    │   ├── storage.ts       # AsyncStorageによる設定・履歴の永続化
-    │   └── notifications.ts # 通知権限リクエスト、終了通知
-    └── screens/
-        ├── TimerScreen.tsx   # メイン画面(タイマー、時間プリセット)
-        └── HistoryScreen.tsx # 今日の実績画面
+App.tsx
+app.json
+eas.json
+src/
+  hooks/useTimer.ts
+  lib/notifications.ts
+  lib/storage.ts
+  screens/TimerScreen.tsx
+  screens/HistoryScreen.tsx
+  types/index.ts
+  theme.ts
 ```
 
-## 4. 実装済みの機能要件
+## 設定ファイル
 
-- [x] 集中/休憩タイマー(プリセット + カスタム可能)
-- [x] 開始/一時停止/リセット/スキップ操作
-- [x] バックグラウンドでも正確なタイマー(ウォールクロック基準の計算方式。setIntervalのtick数に依存しないため、アプリがバックグラウンドで一時停止されても復帰時に正しい残り時間を表示)
-- [x] タイマー終了時のプッシュ通知
-- [x] セッション履歴のローカル保存(AsyncStorage)
-- [x] 今日の実績表示(セット数・集中分数)
-- [x] 自動休憩開始のON/OFF切り替え(Focus To-Doの「意図せず休憩がスキップされる」不満への対策として、デフォルトはOFF)
+- `app.json`: Expoアプリ設定、iOS/Android識別子、通知・スプラッシュ画面設定
+- `eas.json`: EASビルドおよび提出プロファイル
+- `src/hooks/useTimer.ts`: タイマー状態と時間計算
+- `src/lib/storage.ts`: 設定とセッション履歴の端末内保存
+- `src/lib/notifications.ts`: 通知権限とタイマー終了通知
 
-## 5. 未実装(意図的にMVPから除外)
+## 参考資料
 
-- タイムライン表示(v1.1で追加予定)
-- タスク管理機能
-- Apple Watch連携
-- 詳細統計(週次/月次)
-- アカウント・クラウド同期
-
-## 6. 動作確認前に必ず確認すること
-
-- `app.json` の `ios.bundleIdentifier` / `android.package` は仮の値(`com.yourname.pomodoroapp`)なので、実際に使う識別子に書き換えてください
-- `assets/icon.png` などアイコン画像はまだ用意していません。Expoのデフォルトのままだとビルド時にエラーになる可能性があるため、`npx expo start` で一度実行してエラーが出たら `assets/` フォルダに適当な画像を配置してください
-- iOS実機でバックグラウンド通知を確実に届けるには、実機でのビルド(Expo Goではなく `expo run:ios` または EAS Build)が必要になる場合があります。まずはExpo Goで動作確認し、通知まわりで問題が出たら開発ビルドへの切り替えを検討してください
-
-## 7. 次のステップ
-
-1. `npm install` → `npx expo start` で実際に動かしてみる
-2. バグや違和感があれば教えてください(一緒に直します)
-3. 一通り動いたら、UI/UXの磨き込み(アニメーション、進捗の見せ方など)や、v1.1のタイムライン機能に進みましょう
+- [Expo: EAS BuildでiOS本番ビルドを作成](https://docs.expo.dev/tutorial/eas/ios-production-build/)
+- [Expo: iOS App Storeへの提出](https://docs.expo.dev/submit/ios/)
+- [Expo: eas.jsonの設定](https://docs.expo.dev/build/eas-json/)
