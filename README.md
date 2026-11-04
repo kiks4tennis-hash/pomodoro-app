@@ -8,17 +8,22 @@
 
 - 集中・休憩タイマーと時間プリセット
 - 開始、一時停止、リセット、スキップ
-- アプリがバックグラウンドに移動しても、復帰時に残り時間を再計算
-- タイマー終了通知
-- セッション履歴の端末内保存と今日の実績表示
+- 終了時刻に合わせた集中・休憩の通知と、やさしいオリジナルチャイム
+- iOSのロック画面とDynamic Islandに残り時間を表示（Live Activity対応端末）
+- 日本語・英語表示と端末言語への自動追従
+- 今日の記録と、曜日別グラフを含む週間レビュー
+- セッション履歴の端末内保存
 - 集中後に休憩を自動開始する設定
+- クリーム色とテラコッタを基調にしたライトテーマ
 
 ## 技術構成
 
-- Expo SDK 54 / React Native 0.81 / TypeScript
+- Expo SDK 56 / React Native 0.85 / TypeScript
 - React Navigation
 - AsyncStorageによる端末内保存
 - Expo Notificationsによる通知
+- Expo Widgets / SwiftUIによるiOS Live Activity
+- Expo Localizationによる端末言語判定
 - EAS Build / EAS Submit
 
 ## 開発環境のセットアップ
@@ -30,7 +35,9 @@ npm ci
 npx expo start
 ```
 
-Expo Goまたは開発ビルドで実機確認できます。通知の挙動は端末・OS・ビルド方法によって異なるため、リリース前に実機で確認してください。
+通常の画面はExpo Goまたは開発ビルドで確認できます。Live Activityとカスタム通知音はネイティブ機能を含むため、Expo GoではなくEAS開発ビルドを使い、iOS実機で確認してください。Live ActivityはiOS 16.1以降の機能ですが、このExpo SDKのiOS最低対応バージョンは16.4です。この更新後はiOS 16.4未満の端末にアプリをインストールできなくなります。
+
+通知を許可し、タイマーを開始すると終了予定時刻に通知が予約されます。一時停止・リセット・スキップでは予約を取り消します。OSの通知設定、集中モード、端末の消音設定によって、通知の表示や音量は変わることがあります。
 
 ## iOSのビルドとApp Store提出
 
@@ -43,6 +50,13 @@ Expo Goまたは開発ビルドで実機確認できます。通知の挙動は�
    npx eas-cli@latest login
    ```
 
+   PRと同じTypeScript・Expo設定チェックをローカルで実行するには、次のコマンドを使います。
+
+   ```sh
+   npx tsc --noEmit
+   npx expo config --type public
+   ```
+
 2. `app.json` のアプリ名、バンドルID、EAS project IDが既存アプリの設定と一致していることを確認します。公開済みアプリのバンドルID `com.Kazumax71.pomodoro` は変更しないでください。アプリのバージョンを更新するときは `app.json` の `expo.version` を更新します。ビルド番号は `eas.json` の設定によりEAS側で自動採番されます。
 
 3. iOS本番ビルドを作成します。
@@ -50,6 +64,14 @@ Expo Goまたは開発ビルドで実機確認できます。通知の挙動は�
    ```sh
    npx eas-cli@latest build --platform ios --profile production
    ```
+
+   Live Activityや通知音などのネイティブ設定を含むため、新しいバイナリのビルドが必要です。先に開発ビルドで実機確認する場合は、次を実行してください。
+
+   ```sh
+   npx eas-cli@latest build --platform ios --profile development
+   ```
+
+   実機確認後に本番ビルドを作成してください。App Store Connectへの提出と公開は手動で行います。
 
 4. 完了したビルドをApp Store Connectへアップロードします。
 
@@ -69,12 +91,15 @@ app.json
 eas.json
 src/
   hooks/useTimer.ts
+  i18n.ts
+  lib/liveActivity.ts
   lib/notifications.ts
   lib/storage.ts
   screens/TimerScreen.tsx
   screens/HistoryScreen.tsx
   types/index.ts
   theme.ts
+  widgets/FocusLiveActivity.tsx
 ```
 
 ## 設定ファイル

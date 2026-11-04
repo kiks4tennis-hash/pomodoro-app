@@ -1,8 +1,10 @@
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
-import { TimerMode } from "../types";
+import { AppLanguage, TimerMode } from "../types";
 
-// 通知が来たときアプリがフォアグラウンドでも音とバナーを出す設定
+const CHANNEL_ID = "timer-gentle-v1";
+const SOUND = "gentle-bell.wav";
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -13,39 +15,50 @@ Notifications.setNotificationHandler({
   }),
 });
 
-export async function requestNotificationPermission(): Promise<boolean> {
+export async function requestNotificationPermission(language: AppLanguage): Promise<boolean> {
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
-
   if (existingStatus !== "granted") {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
+    finalStatus = (await Notifications.requestPermissionsAsync()).status;
   }
-
   if (Platform.OS === "android") {
-    await Notifications.setNotificationChannelAsync("timer", {
-      name: "タイマー通知",
+    await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
+      name: language === "ja" ? "タイマーの終了" : "Timer alerts",
       importance: Notifications.AndroidImportance.MAX,
-      // 消音/おやすみモード中でも通知が確実に届くよう優先度を最大にする
-      sound: "default",
+      sound: SOUND,
+      vibrationPattern: [0, 180, 120, 180],
     });
   }
-
   return finalStatus === "granted";
 }
 
-// タイマー終了時に即時発火する通知を送る
-export async function sendTimerEndNotification(mode: TimerMode): Promise<void> {
-  const title = mode === "focus" ? "集中セッション終了！" : "休憩終了！";
-  const body = mode === "focus" ? "お疲れさまでした。休憩しましょう。" : "次の集中セッションを始めましょう。";
-
-  await Notifications.scheduleNotificationAsync({
+export async function scheduleTimerEndNotification(
+  mode: TimerMode,
+  endAt: number,
+  language: AppLanguage
+): Promise<string> {
+  const ja = language === "ja";
+  const title = mode === "focus"
+    ? (ja ? "集中タイムが終了しました" : "Focus time is complete")
+    : (ja ? "休憩タイムが終了しました" : "Break time is over");
+  const body = mode === "focus"
+    ? (ja ? "お疲れさまでした。ひと息つきましょう。" : "Well done. Take a moment to rest.")
+    : (ja ? "次の集中タイムを始めましょう。" : "Ready for your next focus session?");
+  return Notifications.scheduleNotificationAsync({
     content: {
       title,
       body,
-      sound: "default",
-      priority: Notifications.AndroidNotificationPriority.MAX,
+      sound: SOUND,
+      ...(Platform.OS === "android" ? { channelId: CHANNEL_ID } : {}),
     },
-    trigger: null, // 即時発火
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      date: new Date(endAt),
+      ...(Platform.OS === "android" ? { channelId: CHANNEL_ID } : {}),
+    },
   });
+}
+
+export async function cancelTimerEndNotification(id: string | null): Promise<void> {
+  if (id) await Notifications.cancelScheduledNotificationAsync(id);
 }
