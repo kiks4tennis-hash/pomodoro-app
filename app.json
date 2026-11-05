@@ -4,10 +4,11 @@
     "slug": "pomodoro-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "icon": "./assets/icon.png",
     "ios": {
       "supportsTablet": false,
+      "deploymentTarget": "16.4",
       "bundleIdentifier": "com.Kazumax71.pomodoro",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -21,7 +22,7 @@
       ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#1A1A2E"
+        "backgroundColor": "#F6F3ED"
       }
     },
     "plugins": [
@@ -29,13 +30,15 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#FF6B6B"
+          "color": "#C76D4E",
+          "sounds": ["./assets/sounds/gentle-bell.wav"]
         }
       ],
+      "expo-widgets",
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#1A1A2E",
+          "backgroundColor": "#F6F3ED",
           "image": "./assets/splash-icon.png",
           "imageWidth": 220
         }

@@ -1,146 +1,108 @@
 import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View, Pressable, ScrollView } from "react-native";
 import { useKeepAwake } from "expo-keep-awake";
+import * as Localization from "expo-localization";
 import { useTimer } from "../hooks/useTimer";
 import { requestNotificationPermission } from "../lib/notifications";
 import { loadSettings, saveSettings, appendSession } from "../lib/storage";
-import {
-  BREAK_PRESETS,
-  DEFAULT_SETTINGS,
-  FOCUS_PRESETS,
-  SessionRecord,
-  TimerSettings,
-} from "../types";
+import { BREAK_PRESETS, DEFAULT_SETTINGS, FOCUS_PRESETS, SessionRecord, TimerSettings, LanguagePreference } from "../types";
 import { colors } from "../theme";
+import { resolveLanguage, t } from "../i18n";
 
 function formatTime(totalSeconds: number): string {
-  const m = Math.floor(totalSeconds / 60)
-    .toString()
-    .padStart(2, "0");
-  const s = Math.floor(totalSeconds % 60)
-    .toString()
-    .padStart(2, "0");
-  return `${m}:${s}`;
+  return `${Math.floor(totalSeconds / 60).toString().padStart(2, "0")}:${Math.floor(totalSeconds % 60).toString().padStart(2, "0")}`;
 }
 
-export default function TimerScreen() {
-  // 集中中はスリープさせず、タイマーを最後まで動かし続ける
-  useKeepAwake();
+interface TimerScreenProps { onLanguageChange: (preference: LanguagePreference) => void }
 
+export default function TimerScreen({ onLanguageChange }: TimerScreenProps) {
+  useKeepAwake();
   const [settings, setSettings] = useState<TimerSettings>(DEFAULT_SETTINGS);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   useEffect(() => {
-    requestNotificationPermission();
-    loadSettings().then((s) => {
-      setSettings(s);
+    loadSettings().then((saved) => {
+      setSettings(saved);
       setSettingsLoaded(true);
+      onLanguageChange(saved.language);
     });
-  }, []);
+  }, [onLanguageChange]);
 
-  const handleSessionComplete = (record: SessionRecord) => {
-    appendSession(record);
-  };
+  const language = resolveLanguage(settings.language, Localization.getLocales()[0]?.languageCode);
+  const text = t(language);
+  useEffect(() => {
+    if (settingsLoaded) void requestNotificationPermission(language);
+  }, [language, settingsLoaded]);
 
-  const timer = useTimer({ settings, onSessionComplete: handleSessionComplete });
-
+  const timer = useTimer({ settings, language, onSessionComplete: (record: SessionRecord) => { void appendSession(record); } });
   const updateSettings = async (partial: Partial<TimerSettings>) => {
     const next = { ...settings, ...partial };
     setSettings(next);
     await saveSettings(next);
+    if (partial.language) onLanguageChange(partial.language);
   };
 
-  if (!settingsLoaded) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.muted}>読み込み中...</Text>
-      </View>
-    );
-  }
+  if (!settingsLoaded) return <View style={styles.loading}><Text style={styles.muted}>{text.loading}</Text></View>;
 
-  const accentColor = timer.mode === "focus" ? colors.focus : colors.break;
+  const accent = timer.mode === "focus" ? colors.focus : colors.break;
   const progress = timer.totalSeconds > 0 ? 1 - timer.remainingSeconds / timer.totalSeconds : 0;
+  const languageOptions: { value: LanguagePreference; label: string }[] = [
+    { value: "system", label: text.system }, { value: "ja", label: text.japanese }, { value: "en", label: text.english },
+  ];
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={[styles.modeLabel, { color: accentColor }]}>
-        {timer.mode === "focus" ? "集中中" : "休憩中"}
-      </Text>
+      <View style={styles.header}>
+        <Text style={styles.eyebrow}>POMODORO</Text>
+        <Text style={[styles.modeLabel, { color: accent }]}>{timer.mode === "focus" ? text.focus : text.rest}</Text>
+      </View>
 
-      <View style={styles.timerCircleOuter}>
-        <View
-          style={[
-            styles.progressBar,
-            { width: `${Math.min(100, Math.max(0, progress * 100))}%`, backgroundColor: accentColor },
-          ]}
-        />
+      <View style={styles.timerCard}>
+        <View style={styles.track}>
+          <View style={[styles.progress, { width: `${Math.min(100, Math.max(0, progress * 100))}%`, backgroundColor: accent }]} />
+        </View>
         <Text style={styles.timerText}>{formatTime(timer.remainingSeconds)}</Text>
+        <Text style={styles.timerHint}>{timer.isRunning ? (language === "ja" ? "いいペースです" : "You're doing great") : (language === "ja" ? "自分のペースで" : "At your own pace")}</Text>
       </View>
 
       <View style={styles.controlsRow}>
         {!timer.isRunning ? (
-          <Pressable style={[styles.mainButton, { backgroundColor: accentColor }]} onPress={timer.start}>
-            <Text style={styles.mainButtonText}>開始</Text>
+          <Pressable style={[styles.mainButton, { backgroundColor: accent }]} onPress={timer.start}>
+            <Text style={styles.mainButtonText}>{text.start}</Text>
           </Pressable>
         ) : (
           <Pressable style={[styles.mainButton, { backgroundColor: colors.buttonBg }]} onPress={timer.pause}>
-            <Text style={styles.mainButtonText}>一時停止</Text>
+            <Text style={styles.mainButtonText}>{text.pause}</Text>
           </Pressable>
         )}
-        <Pressable style={styles.secondaryButton} onPress={timer.reset}>
-          <Text style={styles.secondaryButtonText}>リセット</Text>
-        </Pressable>
-        <Pressable style={styles.secondaryButton} onPress={timer.skip}>
-          <Text style={styles.secondaryButtonText}>スキップ</Text>
-        </Pressable>
+        <Pressable style={styles.secondaryButton} onPress={timer.reset}><Text style={styles.secondaryButtonText}>{text.reset}</Text></Pressable>
+        <Pressable style={styles.secondaryButton} onPress={timer.skip}><Text style={styles.secondaryButtonText}>{text.skip}</Text></Pressable>
       </View>
 
       {!timer.isRunning && (
-        <View style={styles.presetsSection}>
-          <Text style={styles.presetsLabel}>集中時間(分)</Text>
-          <View style={styles.presetsRow}>
-            {FOCUS_PRESETS.map((min) => (
-              <Pressable
-                key={min}
-                style={[
-                  styles.presetChip,
-                  settings.focusMinutes === min && { borderColor: colors.focus, borderWidth: 2 },
-                ]}
-                onPress={() => updateSettings({ focusMinutes: min })}
-              >
-                <Text style={styles.presetChipText}>{min}</Text>
-              </Pressable>
-            ))}
-          </View>
-
-          <Text style={styles.presetsLabel}>休憩時間(分)</Text>
-          <View style={styles.presetsRow}>
-            {BREAK_PRESETS.map((min) => (
-              <Pressable
-                key={min}
-                style={[
-                  styles.presetChip,
-                  settings.breakMinutes === min && { borderColor: colors.break, borderWidth: 2 },
-                ]}
-                onPress={() => updateSettings({ breakMinutes: min })}
-              >
-                <Text style={styles.presetChipText}>{min}</Text>
-              </Pressable>
-            ))}
-          </View>
-
-          <Pressable
-            style={styles.toggleRow}
-            onPress={() => updateSettings({ autoStartBreak: !settings.autoStartBreak })}
-          >
-            <View
-              style={[
-                styles.checkbox,
-                settings.autoStartBreak && { backgroundColor: colors.focus, borderColor: colors.focus },
-              ]}
-            />
-            <Text style={styles.toggleLabel}>集中終了後、自動で休憩を開始する</Text>
+        <View style={styles.settingsCard}>
+          <Text style={styles.sectionTitle}>{text.focusLength}</Text>
+          <View style={styles.presetsRow}>{FOCUS_PRESETS.map((min) => (
+            <Pressable key={min} style={[styles.presetChip, settings.focusMinutes === min && { backgroundColor: colors.focus, borderColor: colors.focus }]} onPress={() => void updateSettings({ focusMinutes: min })}>
+              <Text style={[styles.presetChipText, settings.focusMinutes === min && styles.activeChipText]}>{min}</Text>
+            </Pressable>
+          ))}</View>
+          <Text style={styles.sectionTitle}>{text.breakLength}</Text>
+          <View style={styles.presetsRow}>{BREAK_PRESETS.map((min) => (
+            <Pressable key={min} style={[styles.presetChip, settings.breakMinutes === min && { backgroundColor: colors.break, borderColor: colors.break }]} onPress={() => void updateSettings({ breakMinutes: min })}>
+              <Text style={[styles.presetChipText, settings.breakMinutes === min && styles.activeChipText]}>{min}</Text>
+            </Pressable>
+          ))}</View>
+          <Pressable style={styles.toggleRow} onPress={() => void updateSettings({ autoStartBreak: !settings.autoStartBreak })}>
+            <View style={[styles.checkbox, settings.autoStartBreak && styles.checkboxActive]} />
+            <Text style={styles.toggleLabel}>{text.autoBreak}</Text>
           </Pressable>
+          <Text style={styles.sectionTitle}>{text.language}</Text>
+          <View style={styles.presetsRow}>{languageOptions.map((option) => (
+            <Pressable key={option.value} style={[styles.languageChip, settings.language === option.value && styles.languageChipActive]} onPress={() => void updateSettings({ language: option.value })}>
+              <Text style={[styles.presetChipText, settings.language === option.value && styles.activeChipText]}>{option.label}</Text>
+            </Pressable>
+          ))}</View>
         </View>
       )}
     </ScrollView>
@@ -148,115 +110,32 @@ export default function TimerScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    backgroundColor: colors.background,
-    alignItems: "center",
-    paddingTop: 80,
-    paddingBottom: 40,
-    paddingHorizontal: 24,
-  },
-  muted: {
-    color: colors.textMuted,
-  },
-  modeLabel: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 24,
-    letterSpacing: 2,
-  },
-  timerCircleOuter: {
-    width: 260,
-    height: 260,
-    borderRadius: 130,
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 40,
-    overflow: "hidden",
-  },
-  progressBar: {
-    position: "absolute",
-    left: 0,
-    bottom: 0,
-    height: "100%",
-    opacity: 0.25,
-  },
-  timerText: {
-    fontSize: 56,
-    fontWeight: "700",
-    color: colors.text,
-    fontVariant: ["tabular-nums"],
-  },
-  controlsRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 32,
-  },
-  mainButton: {
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 28,
-  },
-  mainButtonText: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  secondaryButton: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 28,
-    backgroundColor: colors.surface,
-  },
-  secondaryButtonText: {
-    color: colors.textMuted,
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  presetsSection: {
-    width: "100%",
-    marginTop: 8,
-  },
-  presetsLabel: {
-    color: colors.textMuted,
-    fontSize: 13,
-    marginBottom: 8,
-    marginTop: 16,
-  },
-  presetsRow: {
-    flexDirection: "row",
-    gap: 10,
-    flexWrap: "wrap",
-  },
-  presetChip: {
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 20,
-    backgroundColor: colors.surface,
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-  presetChipText: {
-    color: colors.text,
-    fontWeight: "600",
-  },
-  toggleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 24,
-    gap: 12,
-  },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: colors.textMuted,
-  },
-  toggleLabel: {
-    color: colors.text,
-    fontSize: 14,
-    flexShrink: 1,
-  },
+  loading: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background },
+  container: { flexGrow: 1, backgroundColor: colors.background, alignItems: "center", paddingTop: 42, paddingBottom: 36, paddingHorizontal: 24 },
+  header: { alignItems: "center", marginBottom: 24 },
+  eyebrow: { color: colors.textMuted, fontSize: 11, letterSpacing: 3, fontWeight: "700", marginBottom: 8 },
+  modeLabel: { fontSize: 22, fontWeight: "700", letterSpacing: 1 },
+  timerCard: { width: "100%", maxWidth: 390, minHeight: 250, borderRadius: 30, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", padding: 28, marginBottom: 24, shadowColor: "#4F4439", shadowOpacity: 0.07, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 3 },
+  track: { width: "100%", height: 5, backgroundColor: colors.track, borderRadius: 4, overflow: "hidden", marginBottom: 35 },
+  progress: { height: "100%", borderRadius: 4 },
+  timerText: { fontSize: 68, fontWeight: "600", letterSpacing: -2, color: colors.text, fontVariant: ["tabular-nums"] },
+  timerHint: { color: colors.textMuted, fontSize: 13, marginTop: 10 },
+  controlsRow: { flexDirection: "row", gap: 10, marginBottom: 20, alignItems: "center" },
+  mainButton: { minWidth: 128, paddingVertical: 16, paddingHorizontal: 24, borderRadius: 24, alignItems: "center" },
+  mainButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
+  secondaryButton: { paddingVertical: 15, paddingHorizontal: 14, borderRadius: 22, backgroundColor: colors.surface },
+  secondaryButtonText: { color: colors.textMuted, fontSize: 13, fontWeight: "600" },
+  settingsCard: { width: "100%", maxWidth: 440, backgroundColor: colors.surface, borderRadius: 24, padding: 20, marginTop: 8 },
+  sectionTitle: { color: colors.text, fontSize: 13, fontWeight: "700", marginTop: 10, marginBottom: 12 },
+  presetsRow: { flexDirection: "row", gap: 9, flexWrap: "wrap" },
+  presetChip: { minWidth: 52, alignItems: "center", paddingVertical: 10, paddingHorizontal: 15, borderRadius: 17, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.surfaceAlt },
+  languageChip: { alignItems: "center", paddingVertical: 10, paddingHorizontal: 14, borderRadius: 17, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.surfaceAlt },
+  languageChipActive: { backgroundColor: colors.buttonBg, borderColor: colors.buttonBg },
+  presetChipText: { color: colors.text, fontWeight: "600", fontSize: 13 },
+  activeChipText: { color: "#FFFFFF" },
+  toggleRow: { flexDirection: "row", alignItems: "center", marginTop: 22, gap: 11 },
+  checkbox: { width: 21, height: 21, borderRadius: 7, borderWidth: 1.5, borderColor: colors.border },
+  checkboxActive: { backgroundColor: colors.focus, borderColor: colors.focus },
+  toggleLabel: { color: colors.text, fontSize: 13, flexShrink: 1 },
+  muted: { color: colors.textMuted },
 });

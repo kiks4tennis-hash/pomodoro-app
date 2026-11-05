@@ -1,153 +1,135 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { SessionRecord, TimerMode, TimerSettings } from "../types";
-import { sendTimerEndNotification } from "../lib/notifications";
+import { AppLanguage, SessionRecord, TimerMode, TimerSettings } from "../types";
+import { cancelTimerEndNotification, scheduleTimerEndNotification } from "../lib/notifications";
+import { endFocusActivity, updateFocusActivity } from "../lib/liveActivity";
 
 interface UseTimerArgs {
   settings: TimerSettings;
+  language: AppLanguage;
   onSessionComplete: (record: SessionRecord) => void;
 }
 
-function minutesToSeconds(min: number): number {
-  return Math.round(min * 60);
-}
-
+function minutesToSeconds(min: number): number { return Math.round(min * 60); }
 function modeDurationSeconds(mode: TimerMode, settings: TimerSettings): number {
-  return mode === "focus"
-    ? minutesToSeconds(settings.focusMinutes)
-    : minutesToSeconds(settings.breakMinutes);
+  return mode === "focus" ? minutesToSeconds(settings.focusMinutes) : minutesToSeconds(settings.breakMinutes);
 }
 
-export function useTimer({ settings, onSessionComplete }: UseTimerArgs) {
+export function useTimer({ settings, language, onSessionComplete }: UseTimerArgs) {
   const [mode, setMode] = useState<TimerMode>("focus");
   const [totalSeconds, setTotalSeconds] = useState(() => modeDurationSeconds("focus", settings));
   const [remainingSeconds, setRemainingSeconds] = useState(totalSeconds);
   const [isRunning, setIsRunning] = useState(false);
-
-  // ウォールクロック基準で終了予定時刻を保持する。
-  // setIntervalのtickカウントに依存すると、バックグラウンド中にJSが
-  // 停止した際に大きくズレるため、常に「終了予定時刻 - 現在時刻」で
-  // 残り時間を再計算する。
   const endTimeRef = useRef<number | null>(null);
   const startedAtRef = useRef<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const notificationIdRef = useRef<string | null>(null);
+  const tickRef = useRef<() => void>(() => undefined);
 
-  const clearTick = () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  };
+  const clearTick = useCallback(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = null;
+  }, []);
+  const cancelNotification = useCallback(() => {
+    const id = notificationIdRef.current;
+    notificationIdRef.current = null;
+    void cancelTimerEndNotification(id);
+  }, []);
 
-  // 設定が変わったら、タイマーが停止中の場合のみ長さを反映する
   useEffect(() => {
     if (!isRunning) {
       const duration = modeDurationSeconds(mode, settings);
       setTotalSeconds(duration);
       setRemainingSeconds(duration);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings, mode]);
+  }, [isRunning, mode, settings]);
 
-  const finishSession = useCallback(
-    (completed: boolean) => {
-      clearTick();
-      setIsRunning(false);
+  const startInternal = useCallback((seconds: number, requestedMode: TimerMode = mode) => {
+    const now = Date.now();
+    const endAt = now + seconds * 1000;
+    endTimeRef.current = endAt;
+    if (!startedAtRef.current) startedAtRef.current = now;
+    setIsRunning(true);
+    clearTick();
+    intervalRef.current = setInterval(() => tickRef.current(), 250);
+    cancelNotification();
+    void scheduleTimerEndNotification(requestedMode, endAt, language).then((id) => {
+      notificationIdRef.current = id;
+      if (!endTimeRef.current || endTimeRef.current !== endAt) void cancelTimerEndNotification(id);
+    });
+    void updateFocusActivity({ mode: requestedMode, startAt: now, endAt, remainingSeconds: seconds, language, paused: false });
+  }, [cancelNotification, clearTick, language, mode]);
 
-      const startedAt = startedAtRef.current ?? Date.now();
-      const endedAt = Date.now();
+  const finishSession = useCallback((completed: boolean) => {
+    clearTick();
+    cancelNotification();
+    setIsRunning(false);
+    const startedAt = startedAtRef.current ?? Date.now();
+    const endedAt = Date.now();
+    const autoStartBreak = completed && mode === "focus" && settings.autoStartBreak;
+    onSessionComplete({
+      id: `${startedAt}-${mode}`,
+      mode,
+      startedAt,
+      endedAt,
+      durationSeconds: completed ? totalSeconds : Math.max(0, totalSeconds - remainingSeconds),
+      completed,
+    });
+    if (!autoStartBreak) void endFocusActivity();
 
-      const record: SessionRecord = {
-        id: `${startedAt}-${mode}`,
-        mode,
-        startedAt,
-        endedAt,
-        durationSeconds: totalSeconds - remainingSeconds,
-        completed,
-      };
-      onSessionComplete(record);
-
-      if (completed) {
-        sendTimerEndNotification(mode);
-      }
-
-      const nextMode: TimerMode = mode === "focus" ? "break" : "focus";
-      const nextDuration = modeDurationSeconds(nextMode, settings);
-      setMode(nextMode);
-      setTotalSeconds(nextDuration);
-      setRemainingSeconds(nextDuration);
-      endTimeRef.current = null;
-      startedAtRef.current = null;
-
-      // 集中セッションが完了した後だけ、設定に応じて休憩を自動開始する
-      if (completed && mode === "focus" && settings.autoStartBreak) {
-        startInternal(nextDuration);
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [mode, totalSeconds, remainingSeconds, settings, onSessionComplete]
-  );
+    const nextMode: TimerMode = mode === "focus" ? "break" : "focus";
+    const nextDuration = modeDurationSeconds(nextMode, settings);
+    setMode(nextMode);
+    setTotalSeconds(nextDuration);
+    setRemainingSeconds(nextDuration);
+    endTimeRef.current = null;
+    startedAtRef.current = null;
+    if (autoStartBreak) {
+      startInternal(nextDuration, nextMode);
+    }
+  }, [cancelNotification, clearTick, mode, onSessionComplete, remainingSeconds, settings, startInternal, totalSeconds]);
 
   const tick = useCallback(() => {
-    if (!endTimeRef.current) return;
+    if (endTimeRef.current === null) return;
     const remainingMs = endTimeRef.current - Date.now();
     const nextRemaining = Math.max(0, Math.ceil(remainingMs / 1000));
     setRemainingSeconds(nextRemaining);
-
-    if (remainingMs <= 0) {
-      finishSession(true);
-    }
+    if (remainingMs <= 0) finishSession(true);
   }, [finishSession]);
-
-  const startInternal = (secondsOverride?: number) => {
-    const seconds = secondsOverride ?? remainingSeconds;
-    endTimeRef.current = Date.now() + seconds * 1000;
-    if (!startedAtRef.current) {
-      startedAtRef.current = Date.now();
-    }
-    setIsRunning(true);
-    clearTick();
-    intervalRef.current = setInterval(tick, 250);
-  };
+  tickRef.current = tick;
 
   const start = useCallback(() => {
-    if (isRunning) return;
-    startInternal();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isRunning, remainingSeconds]);
+    if (!isRunning) startInternal(remainingSeconds);
+  }, [isRunning, remainingSeconds, startInternal]);
 
   const pause = useCallback(() => {
+    if (!isRunning) return;
+    const remaining = Math.max(0, Math.ceil(((endTimeRef.current ?? Date.now()) - Date.now()) / 1000));
     clearTick();
+    cancelNotification();
+    setRemainingSeconds(remaining);
     setIsRunning(false);
     endTimeRef.current = null;
-  }, []);
+    void updateFocusActivity({ mode, startAt: startedAtRef.current ?? Date.now(), endAt: Date.now() + remaining * 1000, remainingSeconds: remaining, language, paused: true });
+  }, [cancelNotification, clearTick, isRunning, language, mode]);
 
   const reset = useCallback(() => {
     clearTick();
+    cancelNotification();
     setIsRunning(false);
     endTimeRef.current = null;
     startedAtRef.current = null;
+    void endFocusActivity();
     const duration = modeDurationSeconds(mode, settings);
     setTotalSeconds(duration);
     setRemainingSeconds(duration);
-  }, [mode, settings]);
+  }, [cancelNotification, clearTick, mode, settings]);
 
-  // ユーザーが手動で「スキップ」した場合は completed=false として記録する
-  const skip = useCallback(() => {
-    finishSession(false);
-  }, [finishSession]);
+  const skip = useCallback(() => finishSession(false), [finishSession]);
 
-  useEffect(() => {
-    return () => clearTick();
-  }, []);
+  useEffect(() => () => {
+    clearTick();
+    cancelNotification();
+  }, [cancelNotification, clearTick]);
 
-  return {
-    mode,
-    totalSeconds,
-    remainingSeconds,
-    isRunning,
-    start,
-    pause,
-    reset,
-    skip,
-  };
+  return { mode, totalSeconds, remainingSeconds, isRunning, start, pause, reset, skip };
 }
