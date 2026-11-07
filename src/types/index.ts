@@ -1,6 +1,7 @@
 // タイマーの現在モード
 export type TimerMode = "focus" | "break";
-export type LanguagePreference = "system" | "ja" | "en";
+export type LanguagePreference = "ja" | "en";
+export type TimerSound = "gentle-bell.wav" | "soft-chime.wav" | "warm-tone.wav";
 export type AppLanguage = "ja" | "en";
 
 // タイマー本体の状態
@@ -19,6 +20,7 @@ export interface TimerSettings {
   // true: 集中セッション終了後、自動で休憩に入る
   autoStartBreak: boolean;
   language: LanguagePreference;
+  sound: TimerSound;
 }
 
 // 完了したセッション1件分の記録
@@ -35,9 +37,6 @@ export const DEFAULT_SETTINGS: TimerSettings = {
   focusMinutes: 25,
   breakMinutes: 5,
   autoStartBreak: false,
-  language: "system",
+  language: "ja",
+  sound: "gentle-bell.wav",
 };
-
-// プリセットの時間候補（分）
-export const FOCUS_PRESETS = [15, 25, 45, 60];
-export const BREAK_PRESETS = [5, 10, 15];

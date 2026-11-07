@@ -1,9 +1,9 @@
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
-import { AppLanguage, TimerMode } from "../types";
+import { AppLanguage, TimerMode, TimerSound } from "../types";
 
-const CHANNEL_ID = "timer-gentle-v1";
-const SOUND = "gentle-bell.wav";
+const SOUND_OPTIONS: TimerSound[] = ["gentle-bell.wav", "soft-chime.wav", "warm-tone.wav"];
+const channelId = (sound: TimerSound) => `timer-${sound.replace(/[^a-z0-9]/gi, "-")}`;
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -22,12 +22,12 @@ export async function requestNotificationPermission(language: AppLanguage): Prom
     finalStatus = (await Notifications.requestPermissionsAsync()).status;
   }
   if (Platform.OS === "android") {
-    await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
-      name: language === "ja" ? "タイマーの終了" : "Timer alerts",
+    await Promise.all(SOUND_OPTIONS.map((sound) => Notifications.setNotificationChannelAsync(channelId(sound), {
+      name: `${language === "ja" ? "タイマーの終了" : "Timer alerts"} · ${sound.replace(".wav", "")}`,
       importance: Notifications.AndroidImportance.MAX,
-      sound: SOUND,
+      sound,
       vibrationPattern: [0, 180, 120, 180],
-    });
+    })));
   }
   return finalStatus === "granted";
 }
@@ -35,7 +35,8 @@ export async function requestNotificationPermission(language: AppLanguage): Prom
 export async function scheduleTimerEndNotification(
   mode: TimerMode,
   endAt: number,
-  language: AppLanguage
+  language: AppLanguage,
+  sound: TimerSound
 ): Promise<string> {
   const ja = language === "ja";
   const title = mode === "focus"
@@ -48,13 +49,13 @@ export async function scheduleTimerEndNotification(
     content: {
       title,
       body,
-      sound: SOUND,
-      ...(Platform.OS === "android" ? { channelId: CHANNEL_ID } : {}),
+      sound,
+      ...(Platform.OS === "android" ? { channelId: channelId(sound) } : {}),
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DATE,
       date: new Date(endAt),
-      ...(Platform.OS === "android" ? { channelId: CHANNEL_ID } : {}),
+      ...(Platform.OS === "android" ? { channelId: channelId(sound) } : {}),
     },
   });
 }

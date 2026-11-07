@@ -1,4 +1,5 @@
-import { HStack, Text, VStack } from "@expo/ui/swift-ui";
+import { Button, HStack, Image, Spacer, Text, VStack } from "@expo/ui/swift-ui";
+import { font } from "@expo/ui/swift-ui/modifiers";
 import { createLiveActivity } from "expo-widgets";
 import { AppLanguage, TimerMode } from "../types";
 
@@ -21,14 +22,23 @@ function FocusActivity(props: FocusActivityProps) {
   const isJa = props.language === "ja";
   const label = props.mode === "focus" ? (isJa ? "集中タイム" : "Focus") : (isJa ? "休憩タイム" : "Break");
   const countdown = props.paused
-    ? <Text>{formatTime(props.remainingSeconds)}</Text>
-    : <Text timerInterval={{ lower: new Date(props.startAt), upper: new Date(props.endAt) }} countsDown />;
+    ? <Text modifiers={[font({ size: 48, weight: "bold" })]}>{formatTime(props.remainingSeconds)}</Text>
+    : <Text modifiers={[font({ size: 48, weight: "bold" })]} timerInterval={{ lower: new Date(props.startAt), upper: new Date(props.endAt) }} countsDown />;
+  const controlTarget = props.paused ? "focus-timer-resume" : "focus-timer-pause";
+  const controlLabel = props.paused ? (isJa ? "再開" : "Resume") : (isJa ? "一時停止" : "Pause");
   return {
-    banner: <HStack><VStack><Text>{label}</Text>{countdown}</VStack></HStack>,
-    compactLeading: <Text>{props.mode === "focus" ? "●" : "○"}</Text>,
+    banner: (
+      <HStack>
+        <Image systemName="figure.run" />
+        <Button label={controlLabel} systemImage={props.paused ? "play.fill" : "pause.fill"} target={controlTarget} />
+        <Spacer />
+        {countdown}
+      </HStack>
+    ),
+    compactLeading: <Image systemName="figure.run" />,
     compactTrailing: countdown,
-    minimal: <Text>{props.mode === "focus" ? "●" : "○"}</Text>,
-    expandedLeading: <VStack><Text>{label}</Text></VStack>,
+    minimal: <Image systemName="figure.run" />,
+    expandedLeading: <VStack><Text>{label}</Text><Button label={controlLabel} systemImage={props.paused ? "play.fill" : "pause.fill"} target={controlTarget} /></VStack>,
     expandedTrailing: countdown,
     expandedBottom: <Text>{isJa ? "ポモドーロタイマー" : "Pomodoro Timer"}</Text>,
   };
