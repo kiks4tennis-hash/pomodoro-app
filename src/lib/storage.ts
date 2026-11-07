@@ -6,11 +6,15 @@ const SESSIONS_KEY = "@pomodoro/sessions";
 
 // --- 設定の読み書き ---
 
-export async function loadSettings(): Promise<TimerSettings> {
+export async function loadSettings(systemLanguage?: string | null): Promise<TimerSettings> {
   try {
     const raw = await AsyncStorage.getItem(SETTINGS_KEY);
     if (!raw) return DEFAULT_SETTINGS;
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+    const saved = JSON.parse(raw) as Partial<Omit<TimerSettings, "language">> & { language?: string };
+    const language = saved.language === "system"
+      ? (systemLanguage?.toLowerCase().startsWith("ja") ? "ja" : "en")
+      : saved.language;
+    return { ...DEFAULT_SETTINGS, ...saved, language: language === "en" ? "en" : "ja" };
   } catch (e) {
     console.warn("設定の読み込みに失敗しました。デフォルト値を使用します。", e);
     return DEFAULT_SETTINGS;

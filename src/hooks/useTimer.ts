@@ -52,12 +52,12 @@ export function useTimer({ settings, language, onSessionComplete }: UseTimerArgs
     clearTick();
     intervalRef.current = setInterval(() => tickRef.current(), 250);
     cancelNotification();
-    void scheduleTimerEndNotification(requestedMode, endAt, language).then((id) => {
+    void scheduleTimerEndNotification(requestedMode, endAt, language, settings.sound).then((id) => {
       notificationIdRef.current = id;
       if (!endTimeRef.current || endTimeRef.current !== endAt) void cancelTimerEndNotification(id);
     });
     void updateFocusActivity({ mode: requestedMode, startAt: now, endAt, remainingSeconds: seconds, language, paused: false });
-  }, [cancelNotification, clearTick, language, mode]);
+  }, [cancelNotification, clearTick, language, mode, settings.sound]);
 
   const finishSession = useCallback((completed: boolean) => {
     clearTick();

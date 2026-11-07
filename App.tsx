@@ -8,7 +8,6 @@ import HistoryScreen from "./src/screens/HistoryScreen";
 import { colors } from "./src/theme";
 import { loadSettings } from "./src/lib/storage";
 import { AppLanguage, LanguagePreference } from "./src/types";
-import { resolveLanguage } from "./src/i18n";
 
 const Tab = createBottomTabNavigator();
 
@@ -25,13 +24,13 @@ const navTheme = {
 };
 
 export default function App() {
-  const [language, setLanguage] = useState<AppLanguage>(() => resolveLanguage("system", Localization.getLocales()[0]?.languageCode));
+  const [language, setLanguage] = useState<AppLanguage>(() => Localization.getLocales()[0]?.languageCode?.toLowerCase().startsWith("ja") ? "ja" : "en");
   useEffect(() => {
-    loadSettings().then((settings) => setLanguage(resolveLanguage(settings.language, Localization.getLocales()[0]?.languageCode)));
+    loadSettings(Localization.getLocales()[0]?.languageCode).then((settings) => setLanguage(settings.language));
   }, []);
 
   const onLanguageChange = useCallback((preference: LanguagePreference) => {
-    setLanguage(resolveLanguage(preference, Localization.getLocales()[0]?.languageCode));
+    setLanguage(preference);
   }, []);
 
   return (
