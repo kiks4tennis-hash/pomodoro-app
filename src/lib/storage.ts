@@ -10,11 +10,14 @@ export async function loadSettings(systemLanguage?: string | null): Promise<Time
   try {
     const raw = await AsyncStorage.getItem(SETTINGS_KEY);
     if (!raw) return DEFAULT_SETTINGS;
-    const saved = JSON.parse(raw) as Partial<Omit<TimerSettings, "language">> & { language?: string };
+    const saved = JSON.parse(raw) as Partial<Omit<TimerSettings, "language" | "sound">> & { language?: string; sound?: string };
     const language = saved.language === "system"
       ? (systemLanguage?.toLowerCase().startsWith("ja") ? "ja" : "en")
       : saved.language;
-    return { ...DEFAULT_SETTINGS, ...saved, language: language === "en" ? "en" : "ja" };
+    const sound: TimerSettings["sound"] = saved.sound === "soft-chime.wav" || saved.sound === "water-sound.wav"
+      ? "water-sound.wav"
+      : saved.sound === "warm-tone.wav" ? "warm-tone.wav" : DEFAULT_SETTINGS.sound;
+    return { ...DEFAULT_SETTINGS, ...saved, sound, language: language === "en" ? "en" : "ja" };
   } catch (e) {
     console.warn("設定の読み込みに失敗しました。デフォルト値を使用します。", e);
     return DEFAULT_SETTINGS;

@@ -2,7 +2,7 @@ import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 import { AppLanguage, TimerMode, TimerSound } from "../types";
 
-const SOUND_OPTIONS: TimerSound[] = ["gentle-bell.wav", "soft-chime.wav", "warm-tone.wav"];
+const SOUND_OPTIONS: TimerSound[] = ["gentle-bell.wav", "water-sound.wav", "warm-tone.wav"];
 const channelId = (sound: TimerSound) => `timer-${sound.replace(/[^a-z0-9]/gi, "-")}`;
 
 Notifications.setNotificationHandler({

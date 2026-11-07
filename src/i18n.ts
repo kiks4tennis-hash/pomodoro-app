@@ -11,7 +11,7 @@ const ja = {
   focusSets: "完了した集中", focusMinutes: "集中した時間（分）", weeklyTitle: "週間の振り返り", dailyAverage: "1日平均",
   activeDays: "取り組んだ日", bestDay: "一番集中した日", sessions: "セッション", noSessions: "まだ記録がありません。",
   todaySessions: "今日のセッション", weeklySessions: "今週のセッション", skipped: "途中終了", min: "分", mon: "月", tue: "火", wed: "水", thu: "木", fri: "金", sat: "土", sun: "日",
-  save: "保存", settings: "設定", sound: "終了音", customMinutes: "分で設定", validFocus: "集中時間は1〜180分で設定してください", validBreak: "休憩時間は1〜60分で設定してください", soundSoft: "やさしいベル", soundChime: "ソフトチャイム", soundWarm: "あたたかい音", focusPresets: "集中時間ボタン（分）", breakPresets: "休憩時間ボタン（分）",
+  save: "保存", settings: "設定", sound: "終了音", customMinutes: "分で設定", validFocus: "集中時間は1〜180分で設定してください", validBreak: "休憩時間は1〜60分で設定してください", soundSoft: "やさしいベル", soundWater: "水音", soundWarm: "あたたかい音", focusPresets: "集中時間ボタン（分）", breakPresets: "休憩時間ボタン（分）",
 };
 const en = {
   focus: "Focus time", rest: "Break time", start: "Start", pause: "Pause", reset: "Reset", skip: "Skip",
@@ -20,7 +20,7 @@ const en = {
   focusSets: "Completed focus sessions", focusMinutes: "Focus minutes", weeklyTitle: "Weekly review", dailyAverage: "Daily average",
   activeDays: "Active days", bestDay: "Most focused day", sessions: "Sessions", noSessions: "No sessions yet.",
   todaySessions: "Today's sessions", weeklySessions: "This week's sessions", skipped: "Ended early", min: "min", mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun",
-  save: "Save", settings: "Settings", sound: "Timer sound", customMinutes: "Set minutes", validFocus: "Choose a focus length from 1 to 180 minutes", validBreak: "Choose a break length from 1 to 60 minutes", soundSoft: "Gentle bell", soundChime: "Soft chime", soundWarm: "Warm tone", focusPresets: "Focus buttons (min)", breakPresets: "Break buttons (min)",
+  save: "Save", settings: "Settings", sound: "Timer sound", customMinutes: "Set minutes", validFocus: "Choose a focus length from 1 to 180 minutes", validBreak: "Choose a break length from 1 to 60 minutes", soundSoft: "Gentle bell", soundWater: "Water", soundWarm: "Warm tone", focusPresets: "Focus buttons (min)", breakPresets: "Break buttons (min)",
 };
 
 export type TranslationKey = keyof typeof en;
