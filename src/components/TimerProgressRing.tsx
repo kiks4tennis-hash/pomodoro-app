@@ -1,10 +1,42 @@
 import React from "react";
-import { View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import Svg, { Circle } from "react-native-svg";
 
 interface Props { progress: number; color: string; trackColor: string }
 
+const RING_SIZE = 310;
+const STROKE_WIDTH = 12;
+const CENTER = RING_SIZE / 2;
+const RADIUS = (RING_SIZE - STROKE_WIDTH) / 2;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
 export default function TimerProgressRing({ progress, color, trackColor }: Props) {
-  return <View accessibilityLabel={`${Math.round(progress * 100)}%`} style={{ position: "absolute", width: 300, height: 300, borderRadius: 150, borderWidth: 9, borderColor: trackColor }}>
-    <View style={{ position: "absolute", top: -9, left: -9, width: 300, height: 300, borderRadius: 150, borderWidth: 9, borderTopColor: progress > 0 ? color : "transparent", borderRightColor: progress > 0.25 ? color : "transparent", borderBottomColor: progress > 0.5 ? color : "transparent", borderLeftColor: progress > 0.75 ? color : "transparent", transform: [{ rotate: "-45deg" }] }} />
-  </View>;
+  const safeProgress = Math.min(1, Math.max(0, progress));
+  return (
+    <View
+      accessibilityLabel={`${Math.round(safeProgress * 100)}%`}
+      pointerEvents="none"
+      style={[StyleSheet.absoluteFill, styles.centered]}
+    >
+      <Svg width={RING_SIZE} height={RING_SIZE} viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}>
+        <Circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none" stroke={trackColor} strokeWidth={STROKE_WIDTH} />
+        <Circle
+          cx={CENTER}
+          cy={CENTER}
+          r={RADIUS}
+          fill="none"
+          stroke={color}
+          strokeWidth={STROKE_WIDTH}
+          strokeLinecap="round"
+          strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
+          strokeDashoffset={CIRCUMFERENCE * (1 - safeProgress)}
+          rotation={-90}
+          origin={`${CENTER}, ${CENTER}`}
+        />
+      </Svg>
+    </View>
+  );
 }
+
+const styles = StyleSheet.create({ centered: { alignItems: "center", justifyContent: "center" } });
+
