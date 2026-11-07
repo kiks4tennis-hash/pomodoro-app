@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
   modeLabel: { fontSize: 26, fontWeight: "700", letterSpacing: 0.2 },
   settingsButton: { width: 50, height: 50, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface },
   settingsButtonText: { color: colors.text, fontSize: 25, fontWeight: "500" },
-  timerCard: { width: "100%", maxWidth: 440, height: 340, borderRadius: 32, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", padding: 20, marginBottom: 16, shadowColor: "#4F4439", shadowOpacity: 0.07, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 3 },
+  timerCard: { position: "relative", width: "100%", maxWidth: 440, height: 340, borderRadius: 32, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", padding: 20, marginBottom: 16, shadowColor: "#4F4439", shadowOpacity: 0.07, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 3 },
   timerText: { fontSize: 70, fontWeight: "600", letterSpacing: -2.5, color: colors.text, fontVariant: ["tabular-nums"] },
   timerHint: { color: colors.textMuted, fontSize: 15, marginTop: 12 },
   controlsRow: { width: "100%", maxWidth: 440, flexDirection: "row", gap: 12, marginBottom: 10, alignItems: "center" },
