@@ -5,7 +5,7 @@ import { size } from "@expo/ui/jetpack-compose/modifiers";
 interface Props { progress: number; color: string; trackColor: string }
 
 export default function TimerProgressRing({ progress, color, trackColor }: Props) {
-  return <Host style={{ position: "absolute", width: 260, height: 260 }}>
-    <CircularProgressIndicator progress={progress} color={color} trackColor={trackColor} strokeWidth={7} modifiers={[size(250, 250)]} />
+  return <Host style={{ position: "absolute", width: 300, height: 300 }}>
+    <CircularProgressIndicator progress={progress} color={color} trackColor={trackColor} strokeWidth={8} modifiers={[size(290, 290)]} />
   </Host>;
 }

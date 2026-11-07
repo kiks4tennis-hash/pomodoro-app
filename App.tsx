@@ -42,9 +42,9 @@ export default function App() {
           headerShown: false,
           tabBarActiveTintColor: colors.focus,
           tabBarInactiveTintColor: colors.textMuted,
-          tabBarLabelStyle: { fontSize: 15, fontWeight: "600", marginBottom: 2 },
-          tabBarIconStyle: { marginTop: 3 },
-          tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.surface, height: 68, paddingTop: 5, paddingBottom: 6 },
+          tabBarLabelStyle: { fontSize: 15, fontWeight: "600", marginBottom: 0 },
+          tabBarIconStyle: { marginTop: 0 },
+          tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.surface, height: 72, paddingTop: 0, paddingBottom: 12 },
         }}
       >
         <Tab.Screen name={language === "ja" ? "タイマー" : "Timer"} options={{ tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 24 }}>◷</Text> }}>

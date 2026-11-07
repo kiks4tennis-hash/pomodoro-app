@@ -22,19 +22,15 @@ export default function TimerScreen({ onLanguageChange }: TimerScreenProps) {
   const [settings, setSettings] = useState<TimerSettings>(DEFAULT_SETTINGS);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
-  const [focusInput, setFocusInput] = useState(String(DEFAULT_SETTINGS.focusMinutes));
-  const [breakInput, setBreakInput] = useState(String(DEFAULT_SETTINGS.breakMinutes));
   const [focusPresetInputs, setFocusPresetInputs] = useState(DEFAULT_SETTINGS.focusPresets.map(String));
   const [breakPresetInputs, setBreakPresetInputs] = useState(DEFAULT_SETTINGS.breakPresets.map(String));
   const bellPlayer = useAudioPlayer(require("../../assets/sounds/gentle-bell.wav"));
-  const chimePlayer = useAudioPlayer(require("../../assets/sounds/soft-chime.wav"));
+  const waterPlayer = useAudioPlayer(require("../../assets/sounds/water-sound.wav"));
   const warmPlayer = useAudioPlayer(require("../../assets/sounds/warm-tone.wav"));
 
   useEffect(() => {
     loadSettings(Localization.getLocales()[0]?.languageCode).then((saved) => {
       setSettings(saved);
-      setFocusInput(String(saved.focusMinutes));
-      setBreakInput(String(saved.breakMinutes));
       setFocusPresetInputs(saved.focusPresets.map(String));
       setBreakPresetInputs(saved.breakPresets.map(String));
       setSettingsLoaded(true);
@@ -75,31 +71,21 @@ export default function TimerScreen({ onLanguageChange }: TimerScreenProps) {
   const progress = timer.totalSeconds > 0 ? 1 - timer.remainingSeconds / timer.totalSeconds : 0;
   const soundOptions: { value: TimerSound; label: string }[] = [
     { value: "gentle-bell.wav", label: text.soundSoft },
-    { value: "soft-chime.wav", label: text.soundChime },
+    { value: "water-sound.wav", label: text.soundWater },
     { value: "warm-tone.wav", label: text.soundWarm },
   ];
 
   const previewSound = async (sound: TimerSound) => {
-    const players = { "gentle-bell.wav": bellPlayer, "soft-chime.wav": chimePlayer, "warm-tone.wav": warmPlayer };
+    const players = { "gentle-bell.wav": bellPlayer, "water-sound.wav": waterPlayer, "warm-tone.wav": warmPlayer };
     const player = players[sound];
-    const allPlayers = [bellPlayer, chimePlayer, warmPlayer];
+    const allPlayers = [bellPlayer, waterPlayer, warmPlayer];
     allPlayers.forEach((item) => item.pause());
     await setAudioModeAsync({ playsInSilentMode: true });
     await player.seekTo(0);
     player.play();
   };
 
-  const saveDurations = () => {
-    const focusMinutes = Number(focusInput.trim());
-    const breakMinutes = Number(breakInput.trim());
-    if (!Number.isInteger(focusMinutes) || focusMinutes < 1 || focusMinutes > 180) {
-      Alert.alert(text.settings, text.validFocus);
-      return;
-    }
-    if (!Number.isInteger(breakMinutes) || breakMinutes < 1 || breakMinutes > 60) {
-      Alert.alert(text.settings, text.validBreak);
-      return;
-    }
+  const savePresets = () => {
     const focusPresets = focusPresetInputs.map((value) => Number(value.trim()));
     const breakPresets = breakPresetInputs.map((value) => Number(value.trim()));
     if (focusPresets.length !== settings.focusPresets.length || focusPresets.some((value) => !Number.isInteger(value) || value < 1 || value > 180)) {
@@ -110,6 +96,12 @@ export default function TimerScreen({ onLanguageChange }: TimerScreenProps) {
       Alert.alert(text.settings, text.validBreak);
       return;
     }
+    const focusMinutes = settings.focusPresets.includes(settings.focusMinutes)
+      ? focusPresets[settings.focusPresets.indexOf(settings.focusMinutes)]
+      : settings.focusMinutes;
+    const breakMinutes = settings.breakPresets.includes(settings.breakMinutes)
+      ? breakPresets[settings.breakPresets.indexOf(settings.breakMinutes)]
+      : settings.breakMinutes;
     void updateSettings({ focusMinutes, breakMinutes, focusPresets, breakPresets });
     setSettingsVisible(false);
   };
@@ -119,8 +111,6 @@ export default function TimerScreen({ onLanguageChange }: TimerScreenProps) {
       <View style={styles.header}>
         <View><Text style={styles.eyebrow}>FOCUS TIMER</Text><Text style={[styles.modeLabel, { color: accent }]}>{timer.mode === "focus" ? text.focus : text.rest}</Text></View>
         <Pressable accessibilityRole="button" accessibilityLabel={text.settings} style={styles.settingsButton} onPress={() => {
-          setFocusInput(String(settings.focusMinutes));
-          setBreakInput(String(settings.breakMinutes));
           setFocusPresetInputs(settings.focusPresets.map(String));
           setBreakPresetInputs(settings.breakPresets.map(String));
           setSettingsVisible(true);
@@ -153,10 +143,6 @@ export default function TimerScreen({ onLanguageChange }: TimerScreenProps) {
         <KeyboardAvoidingView style={styles.modal} behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <ScrollView contentContainerStyle={styles.modalContent} keyboardShouldPersistTaps="handled">
             <View style={styles.modalHeader}><Text style={styles.modalTitle}>{text.settings}</Text><Pressable accessibilityRole="button" accessibilityLabel={text.reset} onPress={() => setSettingsVisible(false)}><Text style={styles.closeText}>×</Text></Pressable></View>
-            <Text style={styles.sectionTitle}>{text.focusLength}</Text>
-            <View style={styles.inputRow}><TextInput accessibilityLabel={text.focusLength} value={focusInput} onChangeText={setFocusInput} keyboardType="number-pad" returnKeyType="done" style={styles.durationInput} maxLength={3}/><Text style={styles.inputUnit}>{text.min}</Text></View>
-            <Text style={styles.sectionTitle}>{text.breakLength}</Text>
-            <View style={styles.inputRow}><TextInput accessibilityLabel={text.breakLength} value={breakInput} onChangeText={setBreakInput} keyboardType="number-pad" returnKeyType="done" style={styles.durationInput} maxLength={2}/><Text style={styles.inputUnit}>{text.min}</Text></View>
             <Text style={styles.sectionTitle}>{text.focusPresets}</Text>
             <View style={styles.editPresetsRow}>{focusPresetInputs.map((value, index) => <TextInput key={`focus-edit-${index}`} accessibilityLabel={`${text.focusPresets} ${index + 1}`} value={value} onChangeText={(next) => setFocusPresetInputs((values) => values.map((item, i) => i === index ? next : item))} keyboardType="number-pad" style={styles.presetInput} maxLength={3} />)}</View>
             <Text style={styles.sectionTitle}>{text.breakPresets}</Text>
@@ -166,7 +152,7 @@ export default function TimerScreen({ onLanguageChange }: TimerScreenProps) {
             <View style={styles.optionList}>{soundOptions.map((option) => <Pressable key={option.value} style={[styles.option, settings.sound === option.value && styles.optionSelected]} onPress={() => { void previewSound(option.value); void updateSettings({ sound: option.value }); }}><Text style={styles.optionText}>{option.label}</Text><Text style={styles.optionCheck}>{settings.sound === option.value ? "✓" : "▶"}</Text></Pressable>)}</View>
             <Text style={styles.sectionTitle}>{text.language}</Text>
             <View style={styles.presetsRow}>{([{ value: "ja", label: text.japanese }, { value: "en", label: text.english }] as const).map((option) => <Pressable key={option.value} style={[styles.languageChip, settings.language === option.value && styles.languageChipActive]} onPress={() => void updateSettings({ language: option.value })}><Text style={[styles.presetChipText, settings.language === option.value && styles.activeChipText]}>{option.label}</Text></Pressable>)}</View>
-            <Pressable style={styles.saveButton} onPress={saveDurations}><Text style={styles.saveButtonText}>{text.save}</Text></Pressable>
+            <Pressable style={styles.saveButton} onPress={savePresets}><Text style={styles.saveButtonText}>{text.save}</Text></Pressable>
           </ScrollView>
         </KeyboardAvoidingView>
       </Modal>
@@ -182,7 +168,7 @@ const styles = StyleSheet.create({
   modeLabel: { fontSize: 26, fontWeight: "700", letterSpacing: 0.2 },
   settingsButton: { width: 50, height: 50, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface },
   settingsButtonText: { color: colors.text, fontSize: 25, fontWeight: "500" },
-  timerCard: { width: "100%", maxWidth: 440, height: 300, borderRadius: 32, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", padding: 20, marginBottom: 16, shadowColor: "#4F4439", shadowOpacity: 0.07, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 3 },
+  timerCard: { width: "100%", maxWidth: 440, height: 340, borderRadius: 32, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", padding: 20, marginBottom: 16, shadowColor: "#4F4439", shadowOpacity: 0.07, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 3 },
   timerText: { fontSize: 70, fontWeight: "600", letterSpacing: -2.5, color: colors.text, fontVariant: ["tabular-nums"] },
   timerHint: { color: colors.textMuted, fontSize: 15, marginTop: 12 },
   controlsRow: { width: "100%", maxWidth: 440, flexDirection: "row", gap: 12, marginBottom: 10, alignItems: "center" },

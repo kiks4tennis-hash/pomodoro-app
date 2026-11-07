@@ -1,7 +1,7 @@
 // タイマーの現在モード
 export type TimerMode = "focus" | "break";
 export type LanguagePreference = "ja" | "en";
-export type TimerSound = "gentle-bell.wav" | "soft-chime.wav" | "warm-tone.wav";
+export type TimerSound = "gentle-bell.wav" | "water-sound.wav" | "warm-tone.wav";
 export type AppLanguage = "ja" | "en";
 
 // タイマー本体の状態
