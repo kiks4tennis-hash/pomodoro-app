@@ -19,6 +19,8 @@ export function useTimer({ settings, language, onSessionComplete }: UseTimerArgs
   const [totalSeconds, setTotalSeconds] = useState(() => modeDurationSeconds("focus", settings));
   const [remainingSeconds, setRemainingSeconds] = useState(totalSeconds);
   const [isRunning, setIsRunning] = useState(false);
+  const isRunningRef = useRef(isRunning);
+  isRunningRef.current = isRunning;
   const endTimeRef = useRef<number | null>(null);
   const startedAtRef = useRef<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -36,12 +38,14 @@ export function useTimer({ settings, language, onSessionComplete }: UseTimerArgs
   }, []);
 
   useEffect(() => {
-    if (!isRunning) {
+    // Reconfigure the timer only when its mode or settings change. Pausing also
+    // sets isRunning to false, but must keep the captured remaining time.
+    if (!isRunningRef.current) {
       const duration = modeDurationSeconds(mode, settings);
       setTotalSeconds(duration);
       setRemainingSeconds(duration);
     }
-  }, [isRunning, mode, settings]);
+  }, [mode, settings]);
 
   const startInternal = useCallback((seconds: number, requestedMode: TimerMode = mode) => {
     const now = Date.now();
