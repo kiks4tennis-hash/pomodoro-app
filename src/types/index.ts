@@ -17,6 +17,8 @@ export interface TimerState {
 export interface TimerSettings {
   focusMinutes: number;
   breakMinutes: number;
+  focusPresets: number[];
+  breakPresets: number[];
   // true: 集中セッション終了後、自動で休憩に入る
   autoStartBreak: boolean;
   language: LanguagePreference;
@@ -36,6 +38,8 @@ export interface SessionRecord {
 export const DEFAULT_SETTINGS: TimerSettings = {
   focusMinutes: 25,
   breakMinutes: 5,
+  focusPresets: [15, 25, 45, 60],
+  breakPresets: [5, 10, 15],
   autoStartBreak: false,
   language: "ja",
   sound: "gentle-bell.wav",

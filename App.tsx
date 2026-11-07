@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { StatusBar } from "expo-status-bar";
+import { Text } from "react-native";
 import * as Localization from "expo-localization";
 import TimerScreen from "./src/screens/TimerScreen";
 import HistoryScreen from "./src/screens/HistoryScreen";
@@ -39,15 +40,17 @@ export default function App() {
       <Tab.Navigator
         screenOptions={{
           headerShown: false,
-          tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.surface },
           tabBarActiveTintColor: colors.focus,
           tabBarInactiveTintColor: colors.textMuted,
+          tabBarLabelStyle: { fontSize: 15, fontWeight: "600", marginBottom: 2 },
+          tabBarIconStyle: { marginTop: 3 },
+          tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.surface, height: 68, paddingTop: 5, paddingBottom: 6 },
         }}
       >
-        <Tab.Screen name={language === "ja" ? "タイマー" : "Timer"}>
+        <Tab.Screen name={language === "ja" ? "タイマー" : "Timer"} options={{ tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 24 }}>◷</Text> }}>
           {(props) => <TimerScreen {...props} onLanguageChange={onLanguageChange} />}
         </Tab.Screen>
-        <Tab.Screen name={language === "ja" ? "記録" : "History"}>
+        <Tab.Screen name={language === "ja" ? "記録" : "History"} options={{ tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 22 }}>▤</Text> }}>
           {(props) => <HistoryScreen {...props} language={language} />}
         </Tab.Screen>
       </Tab.Navigator>
