@@ -1,5 +1,5 @@
 import { Button, HStack, Image, Spacer, Text, VStack } from "@expo/ui/swift-ui";
-import { font, frame, monospacedDigit } from "@expo/ui/swift-ui/modifiers";
+import { font, frame, labelStyle, monospacedDigit } from "@expo/ui/swift-ui/modifiers";
 import { createLiveActivity } from "expo-widgets";
 import { AppLanguage, TimerMode } from "../types";
 
@@ -31,7 +31,7 @@ function FocusActivity(props: FocusActivityProps) {
     : <Text modifiers={[font({ size: 16, weight: "semibold" }), monospacedDigit(), compactCountdownFrame]} timerInterval={{ lower: new Date(props.startAt), upper: new Date(props.endAt) }} countsDown />;
   const controlTarget = props.paused ? "focus-timer-resume" : "focus-timer-pause";
   const controlLabel = props.paused ? (isJa ? "再開" : "Resume") : (isJa ? "一時停止" : "Pause");
-  const controlButton = <Button label={controlLabel} systemImage={props.paused ? "play.fill" : "pause.fill"} target={controlTarget} modifiers={[frame({ width: 140, height: 52, alignment: "leading" })]} />;
+  const controlButton = <Button label={controlLabel} systemImage={props.paused ? "play.fill" : "pause.fill"} target={controlTarget} modifiers={[labelStyle("iconOnly"), frame({ width: 140, height: 52, alignment: "leading" })]} />;
   return {
     banner: (
       <HStack modifiers={[frame({ width: 360, height: 72 })]}>

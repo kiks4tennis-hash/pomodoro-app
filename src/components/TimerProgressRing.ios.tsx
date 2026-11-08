@@ -6,6 +6,6 @@ interface Props { progress: number; color: string; trackColor: string }
 
 export default function TimerProgressRing({ progress, color }: Props) {
   return <Host style={{ position: "absolute", width: 300, height: 300 }}>
-    <Gauge value={progress} modifiers={[gaugeStyle("circularCapacity"), tint(color), frame({ width: 300, height: 300 })]} />
+    <Gauge value={progress} modifiers={[gaugeStyle("circular"), tint(color), frame({ width: 300, height: 300 })]} />
   </Host>;
 }
