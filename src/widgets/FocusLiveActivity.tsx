@@ -18,12 +18,17 @@ function FocusActivity(props: FocusActivityProps) {
   const label = props.mode === "focus" ? (isJa ? "集中タイム" : "Focus") : (isJa ? "休憩タイム" : "Break");
   const countdownFrame = frame({ width: 140, height: 52, alignment: "center" });
   const compactCountdownFrame = frame({ width: 72, alignment: "center" });
-  const pauseTime = props.paused ? new Date(props.endAt - props.remainingSeconds * 1000) : undefined;
-  const countdown = <Text modifiers={[font({ size: 44, weight: "bold" }), monospacedDigit(), countdownFrame]} timerInterval={{ lower: new Date(props.startAt), upper: new Date(props.endAt) }} countsDown pauseTime={pauseTime} />;
-  const compactCountdown = <Text modifiers={[font({ size: 16, weight: "semibold" }), monospacedDigit(), compactCountdownFrame]} timerInterval={{ lower: new Date(props.startAt), upper: new Date(props.endAt) }} countsDown pauseTime={pauseTime} />;
+  const remainingTime = `${Math.floor(props.remainingSeconds / 60).toString().padStart(2, "0")}:${Math.floor(props.remainingSeconds % 60).toString().padStart(2, "0")}`;
+  const timerInterval = { lower: new Date(props.startAt), upper: new Date(props.endAt) };
+  const countdown = props.paused
+    ? <Text modifiers={[font({ size: 44, weight: "bold" }), monospacedDigit(), countdownFrame]}>{remainingTime}</Text>
+    : <Text modifiers={[font({ size: 44, weight: "bold" }), monospacedDigit(), countdownFrame]} timerInterval={timerInterval} countsDown />;
+  const compactCountdown = props.paused
+    ? <Text modifiers={[font({ size: 16, weight: "semibold" }), monospacedDigit(), compactCountdownFrame]}>{remainingTime}</Text>
+    : <Text modifiers={[font({ size: 16, weight: "semibold" }), monospacedDigit(), compactCountdownFrame]} timerInterval={timerInterval} countsDown />;
   const controlTarget = props.paused ? "focus-timer-resume" : "focus-timer-pause";
   const controlLabel = props.paused ? (isJa ? "再開" : "Resume") : (isJa ? "一時停止" : "Pause");
-  const controlButton = <Button label={controlLabel} systemImage={props.paused ? "play.fill" : "pause.fill"} target={controlTarget} modifiers={[labelStyle("iconOnly"), frame({ width: 140, height: 52, alignment: "leading" })]} />;
+  const controlButton = <Button label={controlLabel} systemImage={props.paused ? "play.fill" : "pause.fill"} target={controlTarget} modifiers={[labelStyle("iconOnly"), font({ size: 28, weight: "bold" }), frame({ width: 164, height: 64, alignment: "center" })]} />;
   return {
     banner: (
       <HStack modifiers={[frame({ width: 360, height: 72 })]}>
