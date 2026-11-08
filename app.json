@@ -2,7 +2,7 @@
   "expo": {
     "name": "Focus Timer",
     "slug": "pomodoro-app",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "icon": "./assets/icon.png",
@@ -39,7 +39,11 @@
         {
           "icon": "./assets/notification-icon.png",
           "color": "#C76D4E",
-          "sounds": ["./assets/sounds/gentle-bell.wav", "./assets/sounds/water-sound.wav", "./assets/sounds/warm-tone.wav"]
+          "sounds": [
+            "./assets/sounds/gentle-bell.wav",
+            "./assets/sounds/water-sound.wav",
+            "./assets/sounds/warm-tone.wav"
+          ]
         }
       ],
       "expo-widgets",
