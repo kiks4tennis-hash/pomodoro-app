@@ -39,11 +39,7 @@
         {
           "icon": "./assets/notification-icon.png",
           "color": "#C76D4E",
-          "sounds": [
-            "./assets/sounds/gentle-bell.wav",
-            "./assets/sounds/water-sound.wav",
-            "./assets/sounds/warm-tone.wav"
-          ]
+          "sounds": ["./assets/sounds/gentle-bell.wav", "./assets/sounds/water-sound.wav", "./assets/sounds/warm-tone.wav"]
         }
       ],
       "expo-widgets",
