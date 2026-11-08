@@ -42,15 +42,33 @@ export default function App() {
           headerShown: false,
           tabBarActiveTintColor: colors.focus,
           tabBarInactiveTintColor: colors.textMuted,
-          tabBarLabelStyle: { fontSize: 15, fontWeight: "600", marginBottom: 0 },
+          tabBarLabelStyle: { fontSize: 15, fontWeight: "600", marginTop: 1 },
           tabBarIconStyle: { marginTop: 0 },
-          tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.surface, height: 72, paddingTop: 0, paddingBottom: 12 },
+          tabBarStyle: {
+            position: "absolute",
+            left: 18,
+            right: 18,
+            bottom: 18,
+            height: 84,
+            paddingTop: 7,
+            paddingBottom: 9,
+            borderRadius: 42,
+            borderTopWidth: 0,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+            elevation: 8,
+            shadowColor: colors.text,
+            shadowOpacity: 0.1,
+            shadowRadius: 16,
+            shadowOffset: { width: 0, height: 5 },
+          },
         }}
       >
-        <Tab.Screen name={language === "ja" ? "タイマー" : "Timer"} options={{ tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 24 }}>◷</Text> }}>
+        <Tab.Screen name={language === "ja" ? "タイマー" : "Timer"} options={{ tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 30, fontWeight: "500" }}>◷</Text> }}>
           {(props) => <TimerScreen {...props} onLanguageChange={onLanguageChange} />}
         </Tab.Screen>
-        <Tab.Screen name={language === "ja" ? "記録" : "History"} options={{ tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 22 }}>▤</Text> }}>
+        <Tab.Screen name={language === "ja" ? "記録" : "History"} options={{ tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 28, fontWeight: "500" }}>▤</Text> }}>
           {(props) => <HistoryScreen {...props} language={language} />}
         </Tab.Screen>
       </Tab.Navigator>
