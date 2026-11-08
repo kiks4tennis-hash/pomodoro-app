@@ -9,7 +9,6 @@ import { loadSettings, saveSettings, appendSession } from "../lib/storage";
 import { DEFAULT_SETTINGS, SessionRecord, TimerSettings, LanguagePreference, TimerSound } from "../types";
 import { colors } from "../theme";
 import { resolveLanguage, t } from "../i18n";
-import TimerProgressRing from "../components/TimerProgressRing";
 
 function formatTime(totalSeconds: number): string {
   return `${Math.floor(totalSeconds / 60).toString().padStart(2, "0")}:${Math.floor(totalSeconds % 60).toString().padStart(2, "0")}`;
@@ -118,7 +117,9 @@ export default function TimerScreen({ onLanguageChange }: TimerScreenProps) {
       </View>
 
       <View style={styles.timerCard}>
-        <TimerProgressRing progress={Math.min(1, Math.max(0, progress))} color={accent} trackColor={colors.track} />
+        <View style={styles.track} accessibilityLabel={`${Math.round(progress * 100)}%`}>
+          <View style={[styles.progress, { width: `${Math.min(100, Math.max(0, progress * 100))}%`, backgroundColor: accent }]} />
+        </View>
         <Text style={styles.timerText}>{formatTime(timer.remainingSeconds)}</Text>
         <Text style={styles.timerHint}>{timer.isRunning ? (language === "ja" ? "いいペースです" : "You're doing great") : (language === "ja" ? "自分のペースで" : "At your own pace")}</Text>
       </View>
@@ -137,7 +138,11 @@ export default function TimerScreen({ onLanguageChange }: TimerScreenProps) {
         <Pressable accessibilityRole="button" style={[styles.controlButton, styles.secondaryButton]} onPress={timer.reset}><Text style={styles.secondaryButtonText}>{text.reset}</Text></Pressable>
         <Pressable accessibilityRole="button" style={[styles.controlButton, styles.secondaryButton]} onPress={timer.skip}><Text style={styles.secondaryButtonText}>{text.skip}</Text></Pressable>
       </View>
-      <Text style={styles.durationSummary}>{settings.focusMinutes} {text.min} · {settings.breakMinutes} {text.min}</Text>
+      <Text style={styles.durationSummary}>
+        {language === "ja"
+          ? `集中時間：${settings.focusMinutes}${text.min} · 休憩時間：${settings.breakMinutes}${text.min}`
+          : `Focus: ${settings.focusMinutes} ${text.min} · Break: ${settings.breakMinutes} ${text.min}`}
+      </Text>
 
       <Modal visible={settingsVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setSettingsVisible(false)}>
         <KeyboardAvoidingView style={styles.modal} behavior={Platform.OS === "ios" ? "padding" : undefined}>
@@ -162,13 +167,15 @@ export default function TimerScreen({ onLanguageChange }: TimerScreenProps) {
 
 const styles = StyleSheet.create({
   loading: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background },
-  container: { flexGrow: 1, justifyContent: "center", backgroundColor: colors.background, alignItems: "center", paddingTop: 20, paddingBottom: 32, paddingHorizontal: 24 },
+  container: { flexGrow: 1, justifyContent: "center", backgroundColor: colors.background, alignItems: "center", paddingTop: 20, paddingBottom: 124, paddingHorizontal: 24 },
   header: { width: "100%", maxWidth: 440, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 22 },
   eyebrow: { color: colors.textMuted, fontSize: 12, letterSpacing: 2.4, fontWeight: "700", marginBottom: 6 },
   modeLabel: { fontSize: 26, fontWeight: "700", letterSpacing: 0.2 },
   settingsButton: { width: 50, height: 50, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface },
   settingsButtonText: { color: colors.text, fontSize: 25, fontWeight: "500" },
-  timerCard: { position: "relative", width: "100%", maxWidth: 440, height: 340, borderRadius: 32, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", padding: 20, marginBottom: 16, shadowColor: "#4F4439", shadowOpacity: 0.07, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 3 },
+  timerCard: { width: "100%", maxWidth: 440, height: 340, borderRadius: 32, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", padding: 28, marginBottom: 16, shadowColor: "#4F4439", shadowOpacity: 0.07, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 3 },
+  track: { width: "100%", height: 6, backgroundColor: colors.track, borderRadius: 5, overflow: "hidden", marginBottom: 28 },
+  progress: { height: "100%", borderRadius: 5 },
   timerText: { fontSize: 70, fontWeight: "600", letterSpacing: -2.5, color: colors.text, fontVariant: ["tabular-nums"] },
   timerHint: { color: colors.textMuted, fontSize: 15, marginTop: 12 },
   controlsRow: { width: "100%", maxWidth: 440, flexDirection: "row", gap: 12, marginBottom: 10, alignItems: "center" },
@@ -177,7 +184,7 @@ const styles = StyleSheet.create({
   mainButtonText: { color: "#FFFFFF", fontSize: 19, fontWeight: "700" },
   secondaryButton: { backgroundColor: colors.surface },
   secondaryButtonText: { color: colors.textMuted, fontSize: 15, fontWeight: "600" },
-  durationSummary: { color: colors.textMuted, fontSize: 15, marginTop: 8 },
+  durationSummary: { width: "100%", maxWidth: 440, color: colors.textMuted, fontSize: 14, fontWeight: "600", textAlign: "center", marginTop: 8, marginBottom: 8 },
   modal: { flex: 1, backgroundColor: colors.background },
   modalContent: { paddingTop: 26, paddingBottom: 36, paddingHorizontal: 24 },
   modalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 },

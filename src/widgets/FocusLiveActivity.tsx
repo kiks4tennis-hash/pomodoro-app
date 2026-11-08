@@ -14,30 +14,24 @@ export interface FocusActivityProps {
 
 function FocusActivity(props: FocusActivityProps) {
   'widget';
-  const formatTime = (totalSeconds: number) => {
-    const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
-    const seconds = Math.floor(totalSeconds % 60).toString().padStart(2, "0");
-    return `${minutes}:${seconds}`;
-  };
   const isJa = props.language === "ja";
   const label = props.mode === "focus" ? (isJa ? "集中タイム" : "Focus") : (isJa ? "休憩タイム" : "Break");
-  const countdownFrame = frame({ width: 140, height: 52, alignment: "trailing" });
-  const compactCountdownFrame = frame({ width: 72, alignment: "trailing" });
-  const countdown = props.paused
-    ? <Text modifiers={[font({ size: 44, weight: "bold" }), monospacedDigit(), countdownFrame]}>{formatTime(props.remainingSeconds)}</Text>
-    : <Text modifiers={[font({ size: 44, weight: "bold" }), monospacedDigit(), countdownFrame]} timerInterval={{ lower: new Date(props.startAt), upper: new Date(props.endAt) }} countsDown />;
-  const compactCountdown = props.paused
-    ? <Text modifiers={[font({ size: 16, weight: "semibold" }), monospacedDigit(), compactCountdownFrame]}>{formatTime(props.remainingSeconds)}</Text>
-    : <Text modifiers={[font({ size: 16, weight: "semibold" }), monospacedDigit(), compactCountdownFrame]} timerInterval={{ lower: new Date(props.startAt), upper: new Date(props.endAt) }} countsDown />;
+  const countdownFrame = frame({ width: 140, height: 52, alignment: "center" });
+  const compactCountdownFrame = frame({ width: 72, alignment: "center" });
+  const pauseTime = props.paused ? new Date(props.endAt - props.remainingSeconds * 1000) : undefined;
+  const countdown = <Text modifiers={[font({ size: 44, weight: "bold" }), monospacedDigit(), countdownFrame]} timerInterval={{ lower: new Date(props.startAt), upper: new Date(props.endAt) }} countsDown pauseTime={pauseTime} />;
+  const compactCountdown = <Text modifiers={[font({ size: 16, weight: "semibold" }), monospacedDigit(), compactCountdownFrame]} timerInterval={{ lower: new Date(props.startAt), upper: new Date(props.endAt) }} countsDown pauseTime={pauseTime} />;
   const controlTarget = props.paused ? "focus-timer-resume" : "focus-timer-pause";
   const controlLabel = props.paused ? (isJa ? "再開" : "Resume") : (isJa ? "一時停止" : "Pause");
   const controlButton = <Button label={controlLabel} systemImage={props.paused ? "play.fill" : "pause.fill"} target={controlTarget} modifiers={[labelStyle("iconOnly"), frame({ width: 140, height: 52, alignment: "leading" })]} />;
   return {
     banner: (
       <HStack modifiers={[frame({ width: 360, height: 72 })]}>
+        <Spacer />
         {controlButton}
         <Spacer />
         {countdown}
+        <Spacer />
       </HStack>
     ),
     compactLeading: <Image systemName="timer" />,

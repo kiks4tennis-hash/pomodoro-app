@@ -104,7 +104,7 @@ export default function HistoryScreen({ language }: { language: AppLanguage }) {
 
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: colors.background },
-  container: { flexGrow: 1, justifyContent: "center", paddingTop: 28, paddingBottom: 40, paddingHorizontal: 24 },
+  container: { flexGrow: 1, justifyContent: "center", paddingTop: 28, paddingBottom: 124, paddingHorizontal: 24 },
   header: { alignItems: "center", marginBottom: 22 },
   eyebrow: { color: colors.textMuted, fontSize: 12, letterSpacing: 2.5, fontWeight: "700", marginBottom: 7 },
   title: { color: colors.text, fontSize: 32, fontWeight: "700" },
